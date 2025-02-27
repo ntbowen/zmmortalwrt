@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# 设置主机名为ZagWrt
+uci set system.@system[0].hostname='ZagWrt'
+uci commit system
+
+exit 0

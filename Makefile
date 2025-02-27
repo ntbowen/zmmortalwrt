@@ -130,6 +130,24 @@ buildinfo: FORCE
 prepare: .config $(tools/stamp-compile) $(toolchain/stamp-compile)
 	$(_SINGLE)$(SUBMAKE) -r buildinfo
 
+# 保存当前配置为项目目录中的默认配置
+savedefconfig: FORCE
+	@mkdir -p $(TOPDIR)/configs
+	@cp .config $(TOPDIR)/configs/defconfig
+	@./scripts/diffconfig.sh > $(TOPDIR)/configs/diffconfig
+	@echo "已将当前配置保存为项目默认配置："
+	@echo "  完整配置: $(TOPDIR)/configs/defconfig"
+	@echo "  差异配置: $(TOPDIR)/configs/diffconfig"
+
+# 加载项目默认配置
+loaddefconfig: FORCE
+	@if [ -f $(TOPDIR)/configs/defconfig ]; then \
+		cp $(TOPDIR)/configs/defconfig .config; \
+		echo "已加载项目默认配置"; \
+	else \
+		echo "项目默认配置不存在"; \
+	fi
+
 world: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE
 	$(_SINGLE)$(SUBMAKE) -r package/index
 	$(_SINGLE)$(SUBMAKE) -r json_overview_image_info

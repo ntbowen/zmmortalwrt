@@ -83,7 +83,7 @@ prepare-tmpinfo: FORCE
 	$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f include/scan.mk SCAN_TARGET="targetinfo" SCAN_DIR="target/linux" SCAN_NAME="target" SCAN_DEPTH=3 SCAN_EXTRA="" SCAN_MAKEOPTS="TARGET_BUILD=1"
 	for type in package target; do \
 		f=tmp/.$${type}info; t=tmp/.config-$${type}.in; \
-		[ "$$t" -nt "$$f" ] || ./scripts/$${type}-metadata.pl $(_ignore) config "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; break; }; \
+		[ "$$t" -nt "$$f" ] || ./scripts/$${type}-metadata.pl $(_ignore) config "$$f" > "$$t" || { rm -f "$$t"; echo "Failed to build $$t"; false; }; \
 	done
 	[ tmp/.config-feeds.in -nt tmp/.packageauxvars ] || ./scripts/feeds feed_config > tmp/.config-feeds.in
 	./scripts/package-metadata.pl mk tmp/.packageinfo > tmp/.packagedeps || { rm -f tmp/.packagedeps; false; }
@@ -93,7 +93,11 @@ prepare-tmpinfo: FORCE
 
 .config: ./scripts/config/conf $(if $(CONFIG_HAVE_DOT_CONFIG),,prepare-tmpinfo)
 	@+if [ \! -e .config ] || ! grep CONFIG_HAVE_DOT_CONFIG .config >/dev/null; then \
-		[ -e $(HOME)/.openwrt/defconfig ] && cp $(HOME)/.openwrt/defconfig .config; \
+		if [ -e $(TOPDIR)/configs/defconfig ]; then \
+			cp $(TOPDIR)/configs/defconfig .config; \
+		elif [ -e $(HOME)/.openwrt/defconfig ]; then \
+			cp $(HOME)/.openwrt/defconfig .config; \
+		fi; \
 		$(_SINGLE)$(NO_TRACE_MAKE) menuconfig $(PREP_MK); \
 	fi
 
@@ -119,7 +123,13 @@ config-clean: FORCE
 
 defconfig: scripts/config/conf prepare-tmpinfo FORCE
 	touch .config
-	@if [ ! -s .config -a -e $(HOME)/.openwrt/defconfig ]; then cp $(HOME)/.openwrt/defconfig .config; fi
+	@if [ ! -s .config ]; then \
+		if [ -e $(TOPDIR)/configs/defconfig ]; then \
+			cp $(TOPDIR)/configs/defconfig .config; \
+		elif [ -e $(HOME)/.openwrt/defconfig ]; then \
+			cp $(HOME)/.openwrt/defconfig .config; \
+		fi; \
+	fi
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
 		$< $(KCONF_FLAGS) --defconfig=.config Config.in
 
@@ -133,22 +143,34 @@ oldconfig: scripts/config/conf prepare-tmpinfo FORCE
 		$< $(KCONF_FLAGS) --$(if $(confdefault),$(confdefault),old)config Config.in
 
 menuconfig: scripts/config/mconf prepare-tmpinfo FORCE
-	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
-		cp $(HOME)/.openwrt/defconfig .config; \
+	if [ \! -e .config ]; then \
+		if [ -e $(TOPDIR)/configs/defconfig ]; then \
+			cp $(TOPDIR)/configs/defconfig .config; \
+		elif [ -e $(HOME)/.openwrt/defconfig ]; then \
+			cp $(HOME)/.openwrt/defconfig .config; \
+		fi; \
 	fi
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
 		$< Config.in
 
 nconfig: scripts/config/nconf prepare-tmpinfo FORCE
-	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
-		cp $(HOME)/.openwrt/defconfig .config; \
+	if [ \! -e .config ]; then \
+		if [ -e $(TOPDIR)/configs/defconfig ]; then \
+			cp $(TOPDIR)/configs/defconfig .config; \
+		elif [ -e $(HOME)/.openwrt/defconfig ]; then \
+			cp $(HOME)/.openwrt/defconfig .config; \
+		fi; \
 	fi
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
 		$< Config.in
 
 xconfig: scripts/config/qconf prepare-tmpinfo FORCE
-	if [ \! -e .config -a -e $(HOME)/.openwrt/defconfig ]; then \
-		cp $(HOME)/.openwrt/defconfig .config; \
+	if [ \! -e .config ]; then \
+		if [ -e $(TOPDIR)/configs/defconfig ]; then \
+			cp $(TOPDIR)/configs/defconfig .config; \
+		elif [ -e $(HOME)/.openwrt/defconfig ]; then \
+			cp $(HOME)/.openwrt/defconfig .config; \
+		fi; \
 	fi
 	$< Config.in
 
@@ -269,4 +291,3 @@ ifeq ($(findstring v,$(DEBUG)),)
 endif
 .PHONY: help FORCE
 .NOTPARALLEL:
-
