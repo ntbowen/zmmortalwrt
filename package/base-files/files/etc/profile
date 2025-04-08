@@ -70,5 +70,7 @@ cat << EOF
 
 For more https://openwrt.org/docs/guide-user/additional-software/opkg-to-apk-cheatsheet
 
+Shell (zsh + oh-my-zsh + zsh-autosuggestions + fastfetch) modified by Zag, Enjoy!
+
 EOF
 fi
