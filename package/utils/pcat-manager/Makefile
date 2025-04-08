@@ -24,7 +24,7 @@ define Package/pcat-manager
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=PCat System Manager
-  DEPENDS:=@TARGET_rockchip_armv8 +glib2 +libgpiod +libjson-c +libusb-1.0 @BROKEN
+  DEPENDS:=@TARGET_rockchip_armv8 +glib2 +libgpiod +libjson-c +libusb-1.0
   URL:=https://photonicat.com
 endef
 
@@ -37,12 +37,18 @@ define Package/pcat-manager/conffiles
 /etc/pcat-manager-userdata.conf
 endef
 
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(CP) $(CURDIR)/files/gpiod-compat.h $(PKG_BUILD_DIR)/
+endef
+
 define Package/pcat-manager/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/pcat-manager $(1)/usr/sbin/pcat-manager
 
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_CONF) $(PKG_BUILD_DIR)/conf/pcat-manager.conf.sample $(1)/etc/pcat-manager.conf
+	$(INSTALL_CONF) $(CURDIR)/files/pcat-manager-userdata.conf $(1)/etc/pcat-manager-userdata.conf
 
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/pcat-manager.init $(1)/etc/init.d/pcat-manager

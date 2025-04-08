@@ -1,0 +1,240 @@
+--- a/src/modem-manager.c
++++ b/src/modem-manager.c
+@@ -1,7 +1,8 @@
+ #include <stdio.h>
+ #include <errno.h>
+ #include <termios.h>
+-#include <gpiod.h>
++#include <gpiod.h>
++#include "../gpiod-compat.h"
+ #include <libusb.h>
+ #include <gio/gio.h>
+ #include "modem-manager.h"
+--- /dev/null
++++ b/gpiod-compat.h
+@@ -0,0 +1,153 @@
++#ifndef __GPIOD_COMPAT_H__
++#define __GPIOD_COMPAT_H__
++
++#include <gpiod.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++// 这个文件提供了libgpiod1和libgpiod2之间的兼容层
++
++// libgpiod1的结构和函数
++struct gpiod_chip {
++    int fd;
++    char *name;
++    char *path;
++};
++
++struct gpiod_line {
++    unsigned int offset;
++    struct gpiod_chip *chip;
++    int fd;
++    bool requested;
++};
++
++// 适配函数 - 将libgpiod2的API转换为libgpiod1的API
++static inline struct gpiod_chip *gpiod_chip_open_by_name(const char *name)
++{
++    if (!name || name[0] == '\0') {
++        return NULL;
++    }
++    
++    char chip_path[64];
++    snprintf(chip_path, sizeof(chip_path), "/dev/%s", name);
++    
++    struct gpiod_chip *chip = gpiod_chip_open(chip_path);
++    if (!chip) {
++        fprintf(stderr, "gpiod_compat: Failed to open chip %s\n", name);
++    }
++    
++    return chip;
++}
++
++static inline struct gpiod_line *gpiod_chip_get_line(struct gpiod_chip *chip, unsigned int offset)
++{
++    if (!chip) {
++        return NULL;
++    }
++    
++    // 在libgpiod2中，我们需要创建一个line_request配置
++    struct gpiod_line_settings *settings = gpiod_line_settings_new();
++    if (!settings) {
++        fprintf(stderr, "gpiod_compat: Failed to create line settings\n");
++        return NULL;
++    }
++    
++    struct gpiod_line_config *config = gpiod_line_config_new();
++    if (!config) {
++        fprintf(stderr, "gpiod_compat: Failed to create line config\n");
++        gpiod_line_settings_free(settings);
++        return NULL;
++    }
++    
++    // 添加偏移量到配置中
++    if (gpiod_line_config_add_line_settings(config, &offset, 1, settings) < 0) {
++        fprintf(stderr, "gpiod_compat: Failed to add line settings\n");
++        gpiod_line_config_free(config);
++        gpiod_line_settings_free(settings);
++        return NULL;
++    }
++    
++    // 创建一个line_request对象
++    struct gpiod_line_request *request = gpiod_chip_request_lines(chip, NULL, config);
++    if (!request) {
++        fprintf(stderr, "gpiod_compat: Failed to request line\n");
++        gpiod_line_config_free(config);
++        gpiod_line_settings_free(settings);
++        return NULL;
++    }
++    
++    // 创建一个模拟的gpiod_line结构
++    struct gpiod_line *line = (struct gpiod_line *)malloc(sizeof(struct gpiod_line));
++    if (!line) {
++        fprintf(stderr, "gpiod_compat: Failed to allocate line\n");
++        gpiod_line_request_release(request);
++        gpiod_line_config_free(config);
++        gpiod_line_settings_free(settings);
++        return NULL;
++    }
++    
++    // 初始化line结构
++    line->offset = offset;
++    line->chip = chip;
++    line->fd = gpiod_line_request_get_fd(request);
++    line->requested = true;
++    
++    // 释放不再需要的资源
++    gpiod_line_config_free(config);
++    gpiod_line_settings_free(settings);
++    
++    return line;
++}
++
++static inline bool gpiod_line_is_requested(struct gpiod_line *line)
++{
++    if (!line) {
++        return false;
++    }
++    
++    return line->requested;
++}
++
++static inline int gpiod_line_request_output(struct gpiod_line *line, const char *consumer, int default_val)
++{
++    if (!line || !line->chip) {
++        return -1;
++    }
++    
++    // 在libgpiod2中，我们需要创建一个line_settings配置
++    struct gpiod_line_settings *settings = gpiod_line_settings_new();
++    if (!settings) {
++        fprintf(stderr, "gpiod_compat: Failed to create line settings\n");
++        return -1;
++    }
++    
++    // 设置为输出模式
++    gpiod_line_settings_set_direction(settings, GPIOD_LINE_DIRECTION_OUTPUT);
++    gpiod_line_settings_set_output_value(settings, default_val ? GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE);
++    
++    struct gpiod_line_config *config = gpiod_line_config_new();
++    if (!config) {
++        fprintf(stderr, "gpiod_compat: Failed to create line config\n");
++        gpiod_line_settings_free(settings);
++        return -1;
++    }
++    
++    // 添加偏移量到配置中
++    if (gpiod_line_config_add_line_settings(config, &line->offset, 1, settings) < 0) {
++        fprintf(stderr, "gpiod_compat: Failed to add line settings\n");
++        gpiod_line_config_free(config);
++        gpiod_line_settings_free(settings);
++        return -1;
++    }
++    
++    // 创建一个request_config对象
++    struct gpiod_request_config *req_cfg = gpiod_request_config_new();
++    if (!req_cfg) {
++        fprintf(stderr, "gpiod_compat: Failed to create request config\n");
++        gpiod_line_config_free(config);
++        gpiod_line_settings_free(settings);
++        return -1;
++    }
++    
++    // 设置消费者名称
++    if (consumer) {
++        gpiod_request_config_set_consumer(req_cfg, consumer);
++    }
++    
++    // 请求GPIO线
++    struct gpiod_line_request *request = gpiod_chip_request_lines(line->chip, req_cfg, config);
++    if (!request) {
++        fprintf(stderr, "gpiod_compat: Failed to request line as output\n");
++        gpiod_request_config_free(req_cfg);
++        gpiod_line_config_free(config);
++        gpiod_line_settings_free(settings);
++        return -1;
++    }
++    
++    // 更新line结构
++    line->fd = gpiod_line_request_get_fd(request);
++    line->requested = true;
++    
++    // 释放不再需要的资源
++    gpiod_request_config_free(req_cfg);
++    gpiod_line_config_free(config);
++    gpiod_line_settings_free(settings);
++    
++    return 0;
++}
++
++static inline int gpiod_line_set_value(struct gpiod_line *line, int value)
++{
++    if (!line || !line->requested) {
++        return -1;
++    }
++    
++    // 创建值数组
++    enum gpiod_line_value values[1] = {
++        value ? GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE
++    };
++    
++    // 设置值
++    if (gpiod_line_request_set_values(line->fd, values) < 0) {
++        fprintf(stderr, "gpiod_compat: Failed to set line value\n");
++        return -1;
++    }
++    
++    return 0;
++}
++
++static inline void gpiod_line_release(struct gpiod_line *line)
++{
++    if (!line) {
++        return;
++    }
++    
++    if (line->requested) {
++        // 释放line_request
++        close(line->fd);
++        line->requested = false;
++    }
++    
++    free(line);
++}
++
++static inline void gpiod_chip_close(struct gpiod_chip *chip)
++{
++    if (!chip) {
++        return;
++    }
++    
++    // 关闭芯片
++    gpiod_chip_close(chip);
++}
++
++#endif /* __GPIOD_COMPAT_H__ */
