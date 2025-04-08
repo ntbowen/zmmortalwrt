@@ -1,0 +1,5 @@
+#!/bin/sh
+#在/etc/openwrt_release的DISTRIB_REVISION行尾添加Build by ZagLu@https://pcat.qsim.top，如果已经有了就跳过
+sed -i "/DISTRIB_REVISION/ { /Build by ZagLu@https:\/\/pcat.qsim.top/b; s/'\(.*\)'/'\1 Build by ZagLu@https:\/\/pcat.qsim.top'/; }" /etc/openwrt_release
+
+exit 0
