@@ -1,0 +1,23 @@
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -2481,10 +2481,10 @@ static int mtk_poll_tx_qdma(struct mtk_e
+ 	while ((cpu != dma) && budget) {
+ 		u32 next_cpu = desc->txd2;
+ 
+-		desc = mtk_qdma_phys_to_virt(ring, desc->txd2);
+ 		if ((desc->txd3 & TX_DMA_OWNER_CPU) == 0)
+ 			break;
+ 
++		desc = mtk_qdma_phys_to_virt(ring, desc->txd2);
+ 		tx_buf = mtk_desc_to_tx_buf(ring, desc,
+ 					    eth->soc->tx.desc_size);
+ 		if (!tx_buf->data)
+@@ -3619,9 +3619,6 @@ static int mtk_open(struct net_device *d
+ 			mtk_gdm_config(eth, target_mac->id, gdm_config);
+ 		}
+-		/* Reset and enable PSE */
+-		mtk_w32(eth, RST_GL_PSE, MTK_RST_GL);
+-		mtk_w32(eth, 0, MTK_RST_GL);
+ 
+ 		napi_enable(&eth->tx_napi);
+ 		napi_enable(&eth->rx_napi);
