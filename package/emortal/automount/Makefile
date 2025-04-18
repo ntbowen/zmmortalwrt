@@ -38,7 +38,9 @@ define Package/ntfs3-mount
   CATEGORY:=Utilities
   SUBMENU:=Filesystem
   TITLE:=NTFS mount script for Paragon NTFS3 driver
-  DEPENDS:=+kmod-fs-ntfs3
+  DEPENDS:= \
+    +kmod-fs-ntfs3 \
+    +ntfs-3g-utils
   CONFLICTS:=ntfs-3g
   VARIANT:=ntfs3-mount
   PKGARCH:=all
@@ -53,11 +55,6 @@ define Package/automount/install
 
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/block
 	$(INSTALL_BIN) ./files/15-automount $(1)/etc/hotplug.d/block/
-endef
-
-define Package/ntfs3-mount/install
-	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) ./files/mount.ntfs $(1)/sbin
 endef
 
 $(eval $(call BuildPackage,automount))
