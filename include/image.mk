@@ -51,7 +51,7 @@ BUILD_DATE:=$(shell date +%Y%m%d-%H%M)
 # 确保我们有内核版本
 KERNEL_VER:=$(LINUX_VERSION)
 ifeq ($(KERNEL_VER),)
-  KERNEL_VER:=$(shell grep -oE "LINUX_VERSION:=([0-9.]+)" $(TOPDIR)/include/kernel-$(KERNEL_PATCHVER) | cut -d'=' -f2)
+  KERNEL_VER:=$(shell grep -oE "LINUX_VERSION:=([0-9.]+)" $(TOPDIR)/target/linux/generic/kernel-$(KERNEL_PATCHVER) | cut -d'=' -f2)
 endif
 ifeq ($(KERNEL_VER),)
   KERNEL_VER:=unknown
