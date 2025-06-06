@@ -1,0 +1,3 @@
+[submodule "package/base-files/files/root/.oh-my-zsh"]
+	path = package/base-files/files/root/.oh-my-zsh
+	url = https://github.com/ohmyzsh/ohmyzsh.git
