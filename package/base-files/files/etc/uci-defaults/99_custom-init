@@ -1,0 +1,18 @@
+#!/bin/sh /etc/rc.common
+
+# 设置系统时区为中国标准时间（CST-8）和亚洲/上海
+uci -q batch <<-EOF
+    set system.@system[0].timezone='CST-8'
+    set system.@system[0].zonename='Asia/Shanghai'
+
+# 配置 NTP 服务器
+    delete system.ntp.server
+    add_list system.ntp.server='ntp1.aliyun.com'
+    add_list system.ntp.server='ntp.tencent.com'
+    add_list system.ntp.server='ntp.ntsc.ac.cn'
+    add_list system.ntp.server='time.ustc.edu.cn'
+EOF
+
+uci commit system
+
+exit 0
