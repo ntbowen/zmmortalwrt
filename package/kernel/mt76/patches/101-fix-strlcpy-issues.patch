@@ -1,0 +1,88 @@
+--- a/mt7615/mt7615_trace.h
++++ b/mt7615/mt7615_trace.h
+@@ -6,6 +6,7 @@
+ #if !defined(__MT7615_TRACE_H) || defined(TRACE_HEADER_MULTI_READ)
+ #define __MT7615_TRACE_H
+ 
++#include <linux/string.h>
+ #include <linux/tracepoint.h>
+ #include "mt7615.h"
+ 
+@@ -14,8 +15,9 @@
+ 
+ #define MAXNAME		32
+ #define DEV_ENTRY	__array(char, wiphy_name, 32)
+-#define DEV_ASSIGN	strlcpy(__entry->wiphy_name,	\
+-				wiphy_name(mt76_hw(dev)->wiphy), MAXNAME)
++#define DEV_ASSIGN	strncpy(__entry->wiphy_name,	\
++				wiphy_name(mt76_hw(dev)->wiphy), MAXNAME); \
++				__entry->wiphy_name[MAXNAME - 1] = '\0'
+ #define DEV_PR_FMT	"%s"
+ #define DEV_PR_ARG	__entry->wiphy_name
+ 
+--- a/mt76x02_trace.h
++++ b/mt76x02_trace.h
+@@ -6,6 +6,7 @@
+ #if !defined(__MT76x02_TRACE_H) || defined(TRACE_HEADER_MULTI_READ)
+ #define __MT76x02_TRACE_H
+ 
++#include <linux/string.h>
+ #include <linux/tracepoint.h>
+ #include "mt76x02.h"
+ 
+@@ -14,8 +15,9 @@
+ 
+ #define MAXNAME		32
+ #define DEV_ENTRY	__array(char, wiphy_name, 32)
+-#define DEV_ASSIGN	strlcpy(__entry->wiphy_name,	\
+-				wiphy_name(mt76_hw(dev)->wiphy), MAXNAME)
++#define DEV_ASSIGN	strncpy(__entry->wiphy_name,	\
++				wiphy_name(mt76_hw(dev)->wiphy), MAXNAME); \
++				__entry->wiphy_name[MAXNAME - 1] = '\0'
+ #define DEV_PR_FMT	"%s"
+ #define DEV_PR_ARG	__entry->wiphy_name
+ 
+--- a/trace.h
++++ b/trace.h
+@@ -6,6 +6,7 @@
+ #if !defined(__MT76_TRACE_H) || defined(TRACE_HEADER_MULTI_READ)
+ #define __MT76_TRACE_H
+ 
++#include <linux/string.h>
+ #include <linux/tracepoint.h>
+ #include "mt76.h"
+ 
+@@ -14,8 +15,9 @@
+ 
+ #define MAXNAME		32
+ #define DEV_ENTRY	__array(char, wiphy_name, 32)
+-#define DEVICE_ASSIGN	strlcpy(__entry->wiphy_name,	\
+-				wiphy_name(dev->hw->wiphy), MAXNAME)
++#define DEVICE_ASSIGN	strncpy(__entry->wiphy_name,	\
++				wiphy_name(dev->hw->wiphy), MAXNAME); \
++				__entry->wiphy_name[MAXNAME - 1] = '\0'
+ #define DEV_PR_FMT	"%s"
+ #define DEV_PR_ARG	__entry->wiphy_name
+ 
+--- a/usb_trace.h
++++ b/usb_trace.h
+@@ -6,6 +6,7 @@
+ #if !defined(__MT76_USB_TRACE_H) || defined(TRACE_HEADER_MULTI_READ)
+ #define __MT76_USB_TRACE_H
+ 
++#include <linux/string.h>
+ #include <linux/tracepoint.h>
+ #include "mt76.h"
+ 
+@@ -14,8 +15,9 @@
+ 
+ #define MAXNAME		32
+ #define DEV_ENTRY	__array(char, wiphy_name, 32)
+-#define DEV_ASSIGN	strlcpy(__entry->wiphy_name,	\
+-				wiphy_name(dev->hw->wiphy), MAXNAME)
++#define DEV_ASSIGN	strncpy(__entry->wiphy_name,	\
++				wiphy_name(dev->hw->wiphy), MAXNAME); \
++				__entry->wiphy_name[MAXNAME - 1] = '\0'
+ #define DEV_PR_FMT	"%s "
+ #define DEV_PR_ARG	__entry->wiphy_name
+ 
